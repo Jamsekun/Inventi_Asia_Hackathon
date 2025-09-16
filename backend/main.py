@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 from typing import Optional
 
 # Load environment variables
-load_dotenv()
+if os.getenv("VERCEL") is None:
+    # Only load .env if not in Vercel environment
+    load_dotenv()
 
 # Import database and RAG system
 from backend.database import get_database, db_manager
@@ -32,38 +34,42 @@ from backend.exceptions import (
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Global RAG system instance
+# Global singletons for serverless reuse
 rag_system: Optional[RAGSystem] = None
+_db_connected = False  # Track DB connection state
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager"""
-    # Startup
+    """Application lifespan manager optimized for Vercel serverless."""
+    global rag_system, _db_connected
+
     logger.info("Starting up Property Management API...")
-    
+
     try:
-        # Initialize database connection
-        await db_manager.connect()
-        logger.info("Database connection established")
-        
-        # Initialize RAG system
-        global rag_system
-        rag_system = RAGSystem(db_manager)
-        await rag_system.initialize()
-        logger.info("RAG system initialized")
-        
+        # Connect to DB only if not already connected
+        if not _db_connected or db_manager.client is None:
+            await db_manager.connect()
+            _db_connected = True
+            logger.info("Database connection established (serverless-safe)")
+
+        # Initialize RAG system only once
+        if rag_system is None:
+            rag_system = RAGSystem(db_manager)
+            await rag_system.initialize()
+            logger.info("RAG system initialized (serverless-safe)")
+
     except Exception as e:
-        logger.error(f"Failed to initialize application: {e}")
+        logger.exception("Failed to initialize application")
         raise
-    
-    yield
-    
-    # Shutdown
-    logger.info("Shutting down Property Management API...")
+
+    yield  # Hand over control to the app
+
+    # In serverless, shutdown may never be called — keep it lightweight
     try:
-        await db_manager.disconnect()
-        logger.info("Database connection closed")
+        logger.info("Shutting down Property Management API...")
+        # Optional: disconnect only if you want to force close on instance freeze
+        # await db_manager.disconnect()
+        # _db_connected = False
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
 
@@ -80,7 +86,11 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=[
+        "http://localhost:3000",  # For local development
+        "https://your-app.vercel.app",  # Your Vercel app URL
+        "http://localhost:8000",  # For local development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
