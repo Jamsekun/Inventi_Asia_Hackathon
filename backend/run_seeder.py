@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+## testing only might delete later
 """
 Simple script to run the database seeder
 """

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+## testing only might delete later
 """
 Seed script to populate MongoDB with sample property management data
 Based on the schema from InfinityCondo_DatasetGen_PROMPT.md

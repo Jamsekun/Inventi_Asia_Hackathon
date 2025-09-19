@@ -89,7 +89,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # For local development
         "https://your-app.vercel.app",  # Your Vercel app URL
-        "http://localhost:8000",  # For local development
+        "http://localhost:5173",  # For local development
     ],
     allow_credentials=True,
     allow_methods=["*"],

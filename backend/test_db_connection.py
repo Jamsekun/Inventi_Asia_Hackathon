@@ -1,7 +1,10 @@
+## testing only might delete later
+
 import os
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
+
 
 # Load environment variables
 load_dotenv()
