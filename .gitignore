@@ -1,2 +1,47 @@
-# Ignore environment files
-backend/.env
+.env
+
+# Ignore large model files
+backend/Rag_System/models/Phi-3-mini-4k-instruct-q4.gguf
+
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+
+# Vite output (handled by build step; not committed)
+frontend/dist/
+
+# Chroma DB or local data
+chroma_db/
+
+# Models
+*.gguf
+backend/Rag_System/models/
+backend/Rag_System/models/Phi-3-mini-4k-instruct-q4.gguf

@@ -14,7 +14,8 @@ if os.getenv("VERCEL") is None:
 
 # Import database and RAG system
 from backend.database import get_database, db_manager
-from backend.rag_system import RAGSystem
+# from backend.Rag_System.index_retrieval_rag import generate_answer, index_files
+from backend.Rag_System.rag2 import hybrid_generate_answer
 
 # Import all routers
 from backend.routers import (
@@ -35,7 +36,6 @@ from backend.exceptions import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # Global singletons for serverless reuse
-rag_system: Optional[RAGSystem] = None
 _db_connected = False  # Track DB connection state
 
 @asynccontextmanager
@@ -52,11 +52,15 @@ async def lifespan(app: FastAPI):
             _db_connected = True
             logger.info("Database connection established (serverless-safe)")
 
-        # Initialize RAG system only once
-        if rag_system is None:
-            rag_system = RAGSystem(db_manager)
-            await rag_system.initialize()
-            logger.info("RAG system initialized (serverless-safe)")
+        # Optionally ensure company rules file is indexed into Chroma at startup
+        try:
+            rules_path = os.path.join(os.path.dirname(__file__), 'Rag_System', 'Company_Rules.md')
+            if os.path.exists(rules_path):
+                # index in background (non-blocking could be used, but keep simple)
+                # index_files([rules_path], namespace='files')
+                logger.info('Company_Rules.md indexed into Chroma')
+        except Exception:
+            logger.exception('Failed to index Company_Rules.md at startup')
 
     except Exception as e:
         logger.exception("Failed to initialize application")
@@ -67,9 +71,6 @@ async def lifespan(app: FastAPI):
     # In serverless, shutdown may never be called — keep it lightweight
     try:
         logger.info("Shutting down Property Management API...")
-        # Optional: disconnect only if you want to force close on instance freeze
-        # await db_manager.disconnect()
-        # _db_connected = False
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
 
@@ -138,7 +139,7 @@ async def health_check():
         return {
             "status": "healthy",
             "database": "connected",
-            "rag_system": "initialized" if rag_system else "not_initialized"
+            "rag_system": "available"
         }
     except Exception as e:
         logger.error(f"Health check failed: {e}")
@@ -178,15 +179,14 @@ async def chat_endpoint(
 ):
     """RAG-powered chat endpoint for intelligent property management queries"""
     try:
-        if not rag_system:
-            raise HTTPException(
-                status_code=503,
-                detail="RAG system not initialized"
-            )
-        
-        # Process the query using RAG system
-        response = await rag_system.process_query(chat_request)
-        return response
+        # Convert incoming messages into a single user query string
+        user_text = "\n".join([m.content for m in chat_request.messages if m.role == 'user'])
+        # Optional collection focus
+        collections = [chat_request.collection_focus] if chat_request.collection_focus else None
+        # generate answer (blocking call) — acceptable for now
+        # answer = generate_answer(user_text, collections=collections)
+        answer = hybrid_generate_answer(user_text)
+        return RAGResponse(intent="general", response=answer, relevant_data=None)
         
     except HTTPException:
         raise
@@ -290,14 +290,11 @@ async def list_collections():
 @app.get("/intents")
 async def list_rag_intents():
     """List all supported RAG intents"""
-    if not rag_system:
-        raise HTTPException(
-            status_code=503,
-            detail="RAG system not initialized"
-        )
-    
     return {
-        "intents": list(rag_system.intent_patterns.keys()),
+        "intents": [
+            "AMENITIES_INFO", "CONTRACT_STATUS", "BILLING_INFO", "EXPENSES_INFO",
+            "MAINTENANCE_REQUEST", "RENT_INFO", "STAFF_INFO", "TENANT_QUERY", "UNIT_INFO"
+        ],
         "descriptions": {
             "AMENITIES_INFO": "Queries about property amenities, facilities, and availability",
             "CONTRACT_STATUS": "Queries about lease contracts, terms, and expiration",
