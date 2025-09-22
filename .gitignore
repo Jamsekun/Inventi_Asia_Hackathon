@@ -1,5 +1,8 @@
-# Ignore environment files
-backend/.env# Logs
+.env
+
+# Ignore large model files
+backend/Rag_System/models/Phi-3-mini-4k-instruct-q4.gguf
+
 logs
 *.log
 npm-debug.log*
@@ -23,3 +26,22 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+
+# Vite output (handled by build step; not committed)
+frontend/dist/
+
+# Chroma DB or local data
+chroma_db/
+
+# Models
+*.gguf
+backend/Rag_System/models/
+backend/Rag_System/models/Phi-3-mini-4k-instruct-q4.gguf
