@@ -43,11 +43,37 @@
 /* base */
 html,body,#root { height:100%; margin:0; background:var(--page-bg); color:var(--text); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
+/* Route-specific helpers */
+.minimized-route-root { height:100vh; background: rgba(10,12,20,0.06); display:flex; align-items:flex-end; justify-content:center; }
+
+/* fullpage widget when user visits /maximize */
+.inventi-widget.fullpage { position:relative; right:auto; bottom:auto; left:50%; transform:translateX(-50%); width:820px; max-width:96%; height:84vh; margin:28px auto; border-radius:12px; display:flex; flex-direction:column; }
+.inventi-widget.fullpage .widget-messages { flex:1; padding:20px 28px; overflow:auto; }
+.inventi-widget.fullpage .widget-header { border-top-left-radius:12px; border-top-right-radius:12px; }
+.inventi-widget.fullpage .widget-input { padding:16px; }
+
+/* minimize route toggle button */
+.minimize-toggle-button {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 1400;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(10,30,80,0.25);
+}
+.minimize-toggle-button.closed { background: rgba(0,0,0,0.6); }
+.minimized-route-root .inventi-widget { margin-bottom: 100px; }
+
 /* TOP PAGE HEADER (centered inventi + tagline) */
 .site-topbar {
   position: sticky;
   top: 0;
-  z-index: 800;
+  z-index:-10;
   background: transparent;
   padding: 18px 12px;
   display:flex;
@@ -60,7 +86,7 @@ html,body,#root { height:100%; margin:0; background:var(--page-bg); color:var(--
 
 /* layout */
 .inventi-root { height:100%; display:flex; align-items:stretch; justify-content:center; }
-.inventi-layout { width:100%; max-width:1400px; margin:20px; display:grid; grid-template-columns: 260px 1fr; gap:18px; }
+.inventi-layout { width:100%; max-width:1400px; margin:20px; display:grid; grid-template-columns: 300px 1fr; gap:18px; }
 
 /* SIDEBAR */
 .inventi-sidebar {
@@ -88,6 +114,20 @@ html,body,#root { height:100%; margin:0; background:var(--page-bg); color:var(--
 .conv-item:hover { background: rgba(255,255,255,0.02); }
 .conv-item.active { background: rgba(255,255,255,0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.01); }
 .conv-title { font-weight:600; font-size:14px; color:var(--sidebar-fg); }
+
+/* conversation item edit input */
+.conv-input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--sidebar-fg); }
+.conv-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; }
+.conv-actions { display:flex; gap:6px; }
+.conv-edit, .conv-delete { background:transparent; border:0; color:var(--sidebar-fg); cursor:pointer; }
+
+/* responsive tweaks */
+@media (max-width: 900px) {
+  .inventi-layout { grid-template-columns: 260px 1fr; margin:12px; }
+  /* show a compact sidebar on mobile, fixed to left with overlay behavior */
+  .inventi-sidebar { position: fixed; left: 0; top: 64px; bottom: 0; width: 220px; z-index: 1400; background: var(--sidebar-bg); transform: translateX(0); box-shadow: 0 20px 60px rgba(8,18,44,0.4); }
+  .inventi-main { margin-left: 220px; }
+}
 
 /* conv actions */
 .conv-delete { background:transparent; border:0; color:var(--sidebar-fg); cursor:pointer; font-size:16px; }
@@ -127,10 +167,15 @@ html,body,#root { height:100%; margin:0; background:var(--page-bg); color:var(--
 .input-bar { padding:12px; border-top:1px solid var(--border); background:var(--panel-bg); }
 
 /* responsive */
-@media (max-width: 900px) {
-  .inventi-layout { grid-template-columns: 1fr; margin:12px; }
-  .inventi-sidebar { display:none; }
+@media (max-width: 420px) {
+  /* very small screens: keep sidebar accessible but collapsed */
+  .inventi-sidebar { width: 180px; z-index: 2;}
+  .inventi-main { margin-left: 180px; }
 }
+
+/* embedded/fullpage tweaks */
+.inventi-main { display:flex; align-items:center; justify-content:center; padding:24px; }
+.inventi-widget.fullpage { width: calc(100% - 360px); max-width:1100px; }
 
 /* --------------------------
    Floating widget + UI controls
@@ -156,6 +201,11 @@ html,body,#root { height:100%; margin:0; background:var(--page-bg); color:var(--
   transition: transform .12s ease, box-shadow .12s ease;
 }
 .chat-toggle-button:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(10,30,80,0.35); }
+
+/* small transition utility classes */
+.animated { will-change: transform, opacity; }
+.fade-in { animation: fadeIn .18s ease-out both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity:1; transform: translateY(0);} }
 
 /* floating widget (bottom-right) */
 .inventi-widget {
